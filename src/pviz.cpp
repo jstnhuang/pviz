@@ -1,9 +1,8 @@
 /* \author Ben Cohen */
 
 #include <pviz/pviz.h>
-#include <leatherman/viz.h>
-#include <leatherman/utils.h>
-#include <leatherman/print.h>
+#include <pviz/leatherman_utils.h>
+#include <pviz/leatherman_viz.h>
 
 static std::string RIGHT_CHAIN_RTIP_NAME = "r_gripper_r_finger_tip_link";
 static std::string RIGHT_CHAIN_LTIP_NAME = "r_gripper_l_finger_tip_link";
