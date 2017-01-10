@@ -30,7 +30,8 @@ enum { RIGHT, LEFT, HEAD, TILT };
 class PViz {
  public:
   /* \brief constructor takes in the desired topic name */
-  PViz(const std::string &ns = std::string());
+  PViz(const std::string &ns = std::string(),
+       const std::string &ref_frame = std::string("/map"));
 
   ~PViz();
 
@@ -195,6 +196,32 @@ class PViz {
       BodyPose &body_pos, double hue, std::string ns, int id,
       bool use_embedded_materials = false);
 
+  /* \brief compute FK for the pr2 arm meshes using the KDL chain */
+  bool computeFKforVisualizationWithKDL(
+      const std::vector<double> &jnt_pos, double torso_pos, int arm,
+      std::vector<geometry_msgs::PoseStamped> &poses);
+
+  /* \brief compute FK for a joint configuration using the KDL chain */
+  bool computeFKwithKDL(const std::vector<double> &angles,
+                        std::vector<double> &base_pos, double torso_pos,
+                        int arm, int frame_num, geometry_msgs::Pose &pose);
+
+  /* \brief compute FK for all robot meshes */
+  bool computeFKforVisualizationWithKDL(
+      const std::vector<double> &jnt0_pos, std::vector<double> &jnt1_pos,
+      std::vector<double> &base_pos, double torso_pos,
+      std::vector<geometry_msgs::PoseStamped> &poses);
+
+  void getRobotMeshes(double hue, std::string ns, int id,
+                      std::vector<geometry_msgs::PoseStamped> &poses,
+                      bool use_embedded_materials,
+                      visualization_msgs::MarkerArray *marker_array);
+
+  /* \brief visualize robot meshes...not to be used publicly */
+  void visualizeRobotMeshes(double hue, std::string ns, int start_id,
+                            std::vector<geometry_msgs::PoseStamped> &poses,
+                            bool use_embedded_materials = false);
+
  private:
   ros::NodeHandle nh_;
   ros::Publisher marker_array_publisher_;
@@ -230,27 +257,6 @@ class PViz {
 
   /* \brief initialize the KDL chain for the robot arm */
   bool initKDLChain();
-
-  /* \brief compute FK for the pr2 arm meshes using the KDL chain */
-  bool computeFKforVisualizationWithKDL(
-      const std::vector<double> &jnt_pos, double torso_pos, int arm,
-      std::vector<geometry_msgs::PoseStamped> &poses);
-
-  /* \brief compute FK for a joint configuration using the KDL chain */
-  bool computeFKwithKDL(const std::vector<double> &angles,
-                        std::vector<double> &base_pos, double torso_pos,
-                        int arm, int frame_num, geometry_msgs::Pose &pose);
-
-  /* \brief compute FK for all robot meshes */
-  bool computeFKforVisualizationWithKDL(
-      const std::vector<double> &jnt0_pos, std::vector<double> &jnt1_pos,
-      std::vector<double> &base_pos, double torso_pos,
-      std::vector<geometry_msgs::PoseStamped> &poses);
-
-  /* \brief visualize robot meshes...not to be used publicly */
-  void visualizeRobotMeshes(double hue, std::string ns, int start_id,
-                            std::vector<geometry_msgs::PoseStamped> &poses,
-                            bool use_embedded_materials = false);
 };
 
 #endif

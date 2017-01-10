@@ -9,9 +9,9 @@ static std::string RIGHT_CHAIN_LTIP_NAME = "r_gripper_l_finger_tip_link";
 static std::string LEFT_CHAIN_RTIP_NAME = "l_gripper_r_finger_tip_link";
 static std::string LEFT_CHAIN_LTIP_NAME = "l_gripper_l_finger_tip_link";
 
-PViz::PViz(const std::string &ns) {
+PViz::PViz(const std::string &ns, const std::string &ref_frame) {
   num_joints_ = 8;  // arm + torso
-  reference_frame_ = "/map";
+  reference_frame_ = ref_frame;
 
   srand(time(NULL));
   arm_joint_names_.push_back("_shoulder_pan_joint");
@@ -106,16 +106,16 @@ PViz::PViz(const std::string &ns) {
     std::stringstream ss;
     ss << "/" << ns << "/visualization_marker_array";
     marker_array_publisher_ =
-        nh_.advertise<visualization_msgs::MarkerArray>(ss.str(), 500);
+        nh_.advertise<visualization_msgs::MarkerArray>(ss.str(), 500, true);
     ss.str(std::string());
     ss << "/" << ns << "/visualization_marker";
     marker_publisher_ =
-        nh_.advertise<visualization_msgs::Marker>(ss.str(), 1000);
+        nh_.advertise<visualization_msgs::Marker>(ss.str(), 1000, true);
   } else {
     marker_array_publisher_ = nh_.advertise<visualization_msgs::MarkerArray>(
-        "visualization_marker_array", 500);
-    marker_publisher_ =
-        nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1000);
+        "visualization_marker_array", 500, true);
+    marker_publisher_ = nh_.advertise<visualization_msgs::Marker>(
+        "visualization_marker", 1000, true);
   }
 }
 
@@ -783,42 +783,49 @@ bool PViz::computeFKforVisualizationWithKDL(
   return true;
 }
 
-void PViz::visualizeRobotMeshes(double hue, std::string ns, int id,
-                                std::vector<geometry_msgs::PoseStamped> &poses,
-                                bool use_embedded_materials) {
+void PViz::getRobotMeshes(double hue, std::string ns, int id,
+                          std::vector<geometry_msgs::PoseStamped> &poses,
+                          bool use_embedded_materials,
+                          visualization_msgs::MarkerArray *marker_array) {
   double r, g, b;
-  marker_array_.markers.clear();
-  marker_array_.markers.resize(robot_meshes_.size());
+  marker_array->markers.clear();
+  marker_array->markers.resize(robot_meshes_.size());
   ros::Time time = ros::Time();
 
   leatherman::HSVtoRGB(&r, &g, &b, hue, 1.0, 1.0);
 
-  for (int i = 0; i < (int)marker_array_.markers.size(); ++i) {
-    marker_array_.markers[i].header.stamp = time;
-    marker_array_.markers[i].header.frame_id = reference_frame_;
-    marker_array_.markers[i].ns = ns;
-    marker_array_.markers[i].type = visualization_msgs::Marker::MESH_RESOURCE;
-    marker_array_.markers[i].id = id + i;
-    marker_array_.markers[i].action = visualization_msgs::Marker::ADD;
-    marker_array_.markers[i].pose = poses.at(i).pose;
-    marker_array_.markers[i].scale.x = 1.0;
-    marker_array_.markers[i].scale.y = 1.0;
-    marker_array_.markers[i].scale.z = 1.0;
+  for (int i = 0; i < (int)marker_array->markers.size(); ++i) {
+    marker_array->markers[i].header.stamp = time;
+    marker_array->markers[i].header.frame_id = reference_frame_;
+    marker_array->markers[i].ns = ns;
+    marker_array->markers[i].type = visualization_msgs::Marker::MESH_RESOURCE;
+    marker_array->markers[i].id = id + i;
+    marker_array->markers[i].action = visualization_msgs::Marker::ADD;
+    marker_array->markers[i].pose = poses.at(i).pose;
+    marker_array->markers[i].scale.x = 1.0;
+    marker_array->markers[i].scale.y = 1.0;
+    marker_array->markers[i].scale.z = 1.0;
     if (use_embedded_materials) {
-      marker_array_.markers[i].color.r = 0;
-      marker_array_.markers[i].color.g = 0;
-      marker_array_.markers[i].color.b = 0;
-      marker_array_.markers[i].color.a = 0;
-      marker_array_.markers[i].mesh_use_embedded_materials = true;
+      marker_array->markers[i].color.r = 0;
+      marker_array->markers[i].color.g = 0;
+      marker_array->markers[i].color.b = 0;
+      marker_array->markers[i].color.a = 0;
+      marker_array->markers[i].mesh_use_embedded_materials = true;
     } else {
-      marker_array_.markers[i].color.r = r;
-      marker_array_.markers[i].color.g = g;
-      marker_array_.markers[i].color.b = b;
-      marker_array_.markers[i].color.a = 0.4;
+      marker_array->markers[i].color.r = r;
+      marker_array->markers[i].color.g = g;
+      marker_array->markers[i].color.b = b;
+      marker_array->markers[i].color.a = 0.4;
     }
-    marker_array_.markers[i].lifetime = ros::Duration(0.0);
-    marker_array_.markers[i].mesh_resource = robot_meshes_[i];
+    marker_array->markers[i].lifetime = ros::Duration(0.0);
+    marker_array->markers[i].mesh_resource = robot_meshes_[i];
   }
+}
+
+void PViz::visualizeRobotMeshes(double hue, std::string ns, int id,
+                                std::vector<geometry_msgs::PoseStamped> &poses,
+                                bool use_embedded_materials) {
+  getRobotMeshes(hue, ns, id, poses, use_embedded_materials, &marker_array_);
   publish(marker_array_);
 }
 
